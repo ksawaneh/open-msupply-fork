@@ -269,7 +269,7 @@ mod test {
         fn not_a_supplier_join() -> NameStoreJoinRow {
             NameStoreJoinRow {
                 id: "not_a_supplier_join".to_string(),
-                name_link_id: not_a_supplier().id,
+                name_id: not_a_supplier().id,
                 store_id: mock_store_a().id,
                 name_is_supplier: false,
                 ..Default::default()
@@ -404,7 +404,7 @@ mod test {
         fn supplier_join() -> NameStoreJoinRow {
             NameStoreJoinRow {
                 id: "supplier_join".to_string(),
-                name_link_id: supplier().id,
+                name_id: supplier().id,
                 store_id: mock_store_a().id,
                 name_is_supplier: true,
                 ..Default::default()
@@ -414,7 +414,7 @@ mod test {
         fn invoice_test() -> InvoiceRow {
             InvoiceRow {
                 id: "invoice_test".to_string(),
-                name_link_id: "supplier".to_string(),
+                name_id: "supplier".to_string(),
                 store_id: "store_a".to_string(),
                 ..Default::default()
             }
@@ -500,7 +500,7 @@ mod test {
         assert_eq!(
             invoice,
             InvoiceRow {
-                name_link_id: supplier().id,
+                name_id: supplier().id,
                 user_id: Some(mock_user_account_a().id),
                 ..invoice.clone()
             }
@@ -984,7 +984,7 @@ mod test {
                 &context,
                 UpdateInboundShipment {
                     id: mock_inbound_shipment_a().id,
-                    other_party_id: Some(mock_name_linked_to_store_join().name_link_id.clone()),
+                    other_party_id: Some(mock_name_linked_to_store_join().name_id.clone()),
                     ..Default::default()
                 },
             )
@@ -1009,7 +1009,7 @@ mod test {
                 &context,
                 UpdateInboundShipment {
                     id: mock_inbound_shipment_a().id,
-                    other_party_id: Some(mock_name_not_linked_to_store_join().name_link_id.clone()),
+                    other_party_id: Some(mock_name_not_linked_to_store_join().name_id.clone()),
                     ..Default::default()
                 },
             )
@@ -1072,7 +1072,7 @@ mod test {
             }
         );
         assert_eq!(log.r#type, ActivityLogType::InvoiceStatusVerified);
-        assert_eq!(Some(invoice.name_link_id), stock_line.supplier_link_id);
+        assert_eq!(Some(invoice.name_id), stock_line.supplier_link_id);
     }
 
     #[actix_rt::test]

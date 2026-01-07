@@ -48,6 +48,7 @@ mod v2_13_00;
 mod v2_13_01;
 mod v2_14_00;
 mod v2_15_00;
+mod v2_16_00;
 mod version;
 mod views;
 
@@ -67,6 +68,7 @@ use crate::{
     KeyType, KeyValueStoreRepository, MigrationFragmentLogRepository, RepositoryError,
     StorageConnection,
 };
+use chrono::{NaiveDateTime, Utc};
 use diesel::connection::SimpleConnection;
 use thiserror::Error;
 
@@ -118,7 +120,7 @@ pub enum MigrationError {
 pub fn migrate(
     connection: &StorageConnection,
     to_version: Option<Version>,
-) -> Result<Version, MigrationError> {
+) -> Result<(Version, Vec<(String, NaiveDateTime)>), MigrationError> {
     let migrations: Vec<Box<dyn Migration>> = vec![
         Box::new(V1_00_04),
         Box::new(V1_01_01),
@@ -168,6 +170,7 @@ pub fn migrate(
         Box::new(v2_13_01::V2_13_01),
         Box::new(v2_14_00::V2_14_00),
         Box::new(v2_15_00::V2_15_00),
+        Box::new(v2_16_00::V2_16_00),
     ];
 
     // Check if the database has been initialised, if not run the base sql to kick start the process
@@ -218,6 +221,8 @@ pub fn migrate(
     let min_version_for_dropping_views = v2_03_00::V2_03_00.version();
     let mut drop_view_has_run = false;
 
+    let mut migration_result = Vec::new();
+
     for migration in &migrations {
         let migration_version = migration.version();
 
@@ -253,6 +258,15 @@ pub fn migrate(
                     source,
                     version: migration_version.clone(),
                 })?;
+
+            migration_result.push((
+                format!(
+                    "Running one time database migration {}",
+                    migration_version.to_string()
+                ),
+                Utc::now().naive_utc(),
+            ));
+
             set_database_version(connection, &migration_version)?;
         }
 
@@ -262,6 +276,11 @@ pub fn migrate(
                 if migration_fragment_log_repo.has_run(migration, &fragment)? {
                     continue;
                 }
+                log::info!(
+                    "Running database migration fragment version {}: {}",
+                    migration.version(),
+                    fragment.identifier()
+                );
 
                 fragment.migrate(connection).map_err(|source| {
                     MigrationError::FragmentMigrationError {
@@ -275,6 +294,11 @@ pub fn migrate(
             }
         }
     }
+
+    migration_result.push((
+        format!("Migrations finished to version {}", to_version.to_string()),
+        Utc::now().naive_utc(),
+    ));
 
     let final_database_version = get_database_version(connection);
 
@@ -293,7 +317,13 @@ pub fn migrate(
     }
 
     set_database_version(connection, &to_version)?;
-    Ok(to_version)
+
+    migration_result.push((
+        format!("Views recreated for {}", to_version.to_string()),
+        Utc::now().naive_utc(),
+    ));
+
+    Ok((to_version, migration_result))
 }
 
 fn get_database_version(connection: &StorageConnection) -> Version {

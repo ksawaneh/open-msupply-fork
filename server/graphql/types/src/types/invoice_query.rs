@@ -20,9 +20,7 @@ use graphql_core::{
     standard_graphql_error::StandardGraphqlError,
     ContextExt,
 };
-use repository::{
-    ClinicianRow, InvoiceRow, Name, NameLinkRow, NameRow, PricingRow, Store, StoreRow,
-};
+use repository::{ClinicianRow, InvoiceRow, Name, NameRow, PricingRow, Store, StoreRow};
 
 use repository::Invoice;
 use serde::Serialize;
@@ -314,18 +312,11 @@ impl InvoiceNode {
             None => patient_loader
                 .load_one(self.name_row().id.clone())
                 .await?
-                .map(|name_row| {
-                    let name_id = name_row.id.clone();
-                    Name {
-                        name_row,
-                        name_link_row: NameLinkRow {
-                            id: name_id.clone(),
-                            name_id,
-                        },
-                        name_store_join_row: None,
-                        store_row: None,
-                        properties: None,
-                    }
+                .map(|name_row| Name {
+                    name_row,
+                    name_store_join_row: None,
+                    store_row: None,
+                    properties: None,
                 }),
         };
 
@@ -615,7 +606,7 @@ mod test {
         fn invoice() -> InvoiceRow {
             InvoiceRow {
                 id: "test_invoice_pricing".to_string(),
-                name_link_id: mock_name_a().id,
+                name_id: mock_name_a().id,
                 store_id: mock_store_a().id,
                 currency_id: Some(currency_a().id),
                 ..Default::default()

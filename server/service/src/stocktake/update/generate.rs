@@ -81,6 +81,7 @@ fn generate_stock_in_out_or_update(
     stocktake_number: &i64,
 ) -> Result<StockLineJob, UpdateStocktakeError> {
     let stocktake_line_row = stocktake_line.line.to_owned();
+    let item = &stocktake_line.item;
     let counted_number_of_packs = match stocktake_line_row.counted_number_of_packs {
         Some(counted_number_of_packs) => counted_number_of_packs,
         None => {
@@ -202,7 +203,7 @@ fn generate_stock_in_out_or_update(
             item_variant_id,
             // From existing stock line
             stock_line_id: Some(stock_line_row.id),
-            item_id: stock_line_row.item_link_id,
+            item_id: item.id.clone(),
             stock_on_hold: stock_line_row.on_hold,
             barcode: stock_line_row.barcode_id,
             // Default
@@ -629,7 +630,7 @@ pub fn generate(
         r#type: InvoiceType::InventoryAddition,
         // Same for addition and reduction
         user_id: Some(user_id.to_string()),
-        name_link_id: inventory_adjustment_name.id,
+        name_id: inventory_adjustment_name.id,
         store_id: store_id.to_string(),
         status: InvoiceStatus::New,
         verified_datetime: Some(now),

@@ -71,7 +71,7 @@ async fn requests_link_patient_to_oms_central_store() {
 
     let nsj_non_visible_patient_remote = NameStoreJoinRow {
         id: uuid(),
-        name_link_id: non_visible_patient.id.clone(),
+        name_id: non_visible_patient.id.clone(),
         store_id: mock_store_a().id,
         ..Default::default()
     };
@@ -95,7 +95,7 @@ async fn requests_link_patient_to_oms_central_store() {
     // Currently not possible to mock the call to central from the processor
     // So let's just check it errors in the right place :violent_sob:
     let error_log = SystemLogRowRepository::new(&ctx.connection)
-        .last_x_messages(1)
+        .last_x_errors(1)
         .unwrap()
         .pop()
         .unwrap();
